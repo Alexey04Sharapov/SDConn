@@ -27,46 +27,27 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <stdint.h>
-#include <string.h>
 
-#include <unistd.h>
+#include "../../Headers/cmn_macros.h"
+#include "../../Headers/msg_type.h"
+#include "../api/pres2pm.h"
 
-#include "../Headers/cmn_macros.h"
+static void (*fPointer)(enum msg_type type, size_t bodySize, char const body [][bodySize]);
 
-extern void (*presentation_init(void))(void);
-extern struct {void (*exit)(void); void (*work)(void);}
-    plugin_manager_init(void);
+static void onExit(void) {
 
-char program_dir_path[4096];
+}
 
-// This module is named kernel
-int main(int argc, char *argv[]) {
-    printf("ASTEAM !\n");
+void subscribe(void (*foo)(enum msg_type type, size_t bodySize, char const body [][bodySize])) {
+    fPointer = foo;
+}
 
-    if(unlikely(!getcwd(program_dir_path, sizeof(program_dir_path)))) {
-        exit(1);
-    }
+void send_message(enum msg_type type, size_t bodySize, char const body [][bodySize], void (*callback)(int status)) {
+    if(unlikely(callback)) {
+        callback(-1);
+    };
+}
 
-    void (*fp)(void) = presentation_init();
-    if(unlikely(fp && atexit(fp))) {
-        //something goes wrong
-        exit(1);
-    }
-
-    decltype(plugin_manager_init()) const fpTuple = plugin_manager_init();
-    if(unlikely(fpTuple.exit && atexit(fpTuple.exit))) {
-        //something goes wrong
-        exit(1);
-    }
-
-
-    while(1) {
-        if(likely(fpTuple.work)) {
-            fpTuple.work();
-        }
-        sleep(1);
-    }
-
-
-    return 0;
+void (*presentation_init(void))(void) {
+    return onExit;
 }
