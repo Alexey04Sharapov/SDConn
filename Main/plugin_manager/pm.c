@@ -38,12 +38,14 @@
 #include "../api/pres2pm.h"
 
 #define MAX_PLUGINS 255
+#define PLUGINS_DIR "Plugins"
 
 extern char program_dir_path[4096];
 
 static size_t plugin_count;
 
-static callback_foo * callback_arr[MSG_COUNT];
+static callback_foo  * callback_arr[MSG_COUNT];
+
 
 static void onExit(void) {
     if(likely(callback_arr[0])) {
@@ -100,7 +102,7 @@ static int loadPlugins() {
         return 0;
     }
 
-    DIR * dir = opendir("Plugins");
+    DIR * dir = opendir(PLUGINS_DIR);
 
     if(unlikely(!dir)) {
         puts("The directory hasn't been found\n");
@@ -117,10 +119,10 @@ static int loadPlugins() {
             char curr_path [sizeof(program_dir_path) + 256 + 10];
             curr_path[0] = '\0';
             strcat(curr_path, program_dir_path);
-            strcat(curr_path, "/Plugins/");
+            strcat(curr_path, "/" PLUGINS_DIR "/");
             strcat(curr_path, file->d_name);
 
-            void * handle = dlopen(curr_path, RTLD_LAZY);
+            void * handle = dlopen(curr_path, RTLD_NOW);
             if(unlikely(!handle)) {
                 puts("dlopen error\n");
             }
@@ -142,7 +144,7 @@ static int loadPlugins() {
     plugin_count = counter;
     closedir(dir);
 
-    void * ptr = calloc(counter, sizeof(callback_arr));
+    void * ptr = calloc(counter, sizeof(callback_foo) * array_size(callback_arr));
     if(unlikely(!ptr)) {
         exit(1);
     }
